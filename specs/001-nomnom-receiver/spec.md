@@ -23,19 +23,20 @@ As a knowledge worker browsing the web with the NomNom userscript installed, I w
 
 ---
 
-### User Story 2 - YouTube Transcript Enrichment (Priority: P2)
+### User Story 2 - YouTube Full Content Extraction (Priority: P2)
 
-As a knowledge worker visiting YouTube videos, I want the system to automatically fetch the video transcript server-side, so that the video's spoken content is captured and archived even though the browser cannot extract it directly.
+As a knowledge worker visiting YouTube videos, I want the system to automatically extract all available video data server-side — including title, description, transcript, and metadata — so that the full content of the video is captured and archived without the browser needing to do any YouTube-specific parsing.
 
-**Why this priority**: YouTube is a primary content type. The userscript sends only a placeholder for YouTube videos — the receiver must enrich it to make the archive useful.
+**Why this priority**: YouTube is a primary content type. When the userscript detects a YouTube watch page, it sends only the video URL and signals the content type. The receiver is responsible for fetching all content using server-side tooling, making the stored entry as rich as any other archived page.
 
-**Independent Test**: Can be fully tested by submitting a YouTube video URL to the receiver and confirming the stored entry contains the fetched transcript text rather than the placeholder.
+**Independent Test**: Can be fully tested by submitting a YouTube video URL to the receiver and confirming the stored entry contains the server-fetched title, transcript, and metadata.
 
 **Acceptance Scenarios**:
 
-1. **Given** the receiver processes a submission with `type: "youtube_video"` and a video ID, **When** the submission is accepted, **Then** the system fetches the video transcript and replaces the placeholder content with the actual transcript before saving.
-2. **Given** a YouTube video has no available transcript (captions disabled), **Then** the system stores the entry with a clear indicator that transcript extraction was attempted but unavailable.
-3. **Given** the transcript fetch fails due to network error or rate limiting, **Then** the submission is still stored with the placeholder content and the failure reason is recorded.
+1. **Given** the receiver identifies a submission as a YouTube video (by content type), **When** the URL is received, **Then** the system fetches the full video data server-side and stores the result — no reliance on content provided by the userscript.
+2. **Given** a YouTube video has captions or a transcript available, **Then** the stored entry contains the transcript text alongside the video title and description.
+3. **Given** a YouTube video has no available captions (disabled by the creator), **Then** the system stores the entry with the available metadata and a clear indicator that transcript extraction was attempted but unavailable.
+4. **Given** the server-side fetch fails (network error, deleted video, private video), **Then** the submission is still stored with the URL and a failure reason recorded, and the receiver returns a success status to the userscript.
 
 ---
 
@@ -83,13 +84,13 @@ As a developer setting up NomNom on a home server or workstation, I want to laun
 ### Functional Requirements
 
 - **FR-001**: The receiver MUST accept structured content submissions from the NomNom userscript over the local network.
-- **FR-002**: Each submission MUST include the following fields: page URL, domain, title, markdown content, and a metadata object containing at minimum a content type identifier.
+- **FR-002**: For standard content types (Reddit, GitHub, generic articles), each submission MUST include: page URL, domain, title, markdown content, and a metadata object with a content type identifier. For YouTube submissions, only the page URL and content type identifier are required — all other content is fetched server-side.
 - **FR-003**: The receiver MUST persist all accepted submissions to durable storage that survives service restarts.
 - **FR-004**: The receiver MUST accept cross-origin requests from browser extensions running on any domain.
 - **FR-005**: The receiver MUST respond to each submission with a clear success or failure status that the userscript can interpret.
 - **FR-006**: The receiver MUST respond to successful submissions within 2 seconds for standard content types (non-YouTube).
-- **FR-007**: When a submission is identified as a YouTube video, the receiver MUST attempt to fetch the video's transcript server-side and store the fetched transcript content rather than the placeholder.
-- **FR-008**: If transcript enrichment fails for a YouTube video, the receiver MUST still store the submission with the original placeholder content and record the failure reason.
+- **FR-007**: When a submission is identified as a YouTube video, the receiver MUST fetch all available video data server-side — including title, description, transcript/captions, and relevant metadata — and store the fetched content as the archived entry.
+- **FR-008**: If server-side YouTube content extraction fails, the receiver MUST still store the submission with the URL and a recorded failure reason, and return a success response to the userscript.
 - **FR-009**: The receiver MUST update an existing record when the same URL is submitted again, rather than creating a duplicate entry.
 - **FR-010**: The receiver MUST be fully operable as a containerized service launched via a container orchestration configuration file.
 - **FR-011**: Stored data MUST be persisted to a host-mounted volume so it survives container recreation.
@@ -98,8 +99,8 @@ As a developer setting up NomNom on a home server or workstation, I want to laun
 
 ### Key Entities
 
-- **Submission**: A single captured web page. Contains: URL (unique identifier), domain, title, markdown content, content type, metadata (flexible store for type-specific fields such as subreddit name, video ID, author, comment count), ingestion timestamp, last-updated timestamp, and enrichment status.
-- **Enrichment Job**: A server-side processing task triggered by certain content types (currently YouTube). Contains: associated submission URL, status (pending / complete / failed), failure reason if applicable, and completion timestamp.
+- **Submission**: A single captured web page or video. Contains: URL (unique identifier), domain, title, markdown content, content type, metadata (flexible store for type-specific fields such as subreddit name, video ID, author, comment count, caption availability), ingestion timestamp, last-updated timestamp, and enrichment status.
+- **Enrichment Job**: A server-side content-fetching task triggered for YouTube submissions. Contains: associated submission URL, status (pending / complete / failed), failure reason if applicable, and completion timestamp.
 
 ## Success Criteria _(mandatory)_
 
@@ -107,7 +108,7 @@ As a developer setting up NomNom on a home server or workstation, I want to laun
 
 - **SC-001**: A page visited in the browser with the userscript installed is stored in the receiver's archive within 10 seconds of the page loading, with no user action required.
 - **SC-002**: 100% of submissions that receive a success response are retrievable from storage without data loss.
-- **SC-003**: YouTube video entries stored in the archive contain the actual transcript text in at least 90% of cases where the video has captions available.
+- **SC-003**: YouTube video entries stored in the archive contain server-fetched content (title, transcript, and metadata) in at least 90% of cases where the video is publicly accessible and has captions available.
 - **SC-004**: Visiting the same URL 10 times results in exactly 1 stored record (with an updated timestamp), not 10 records.
 - **SC-005**: The service can be brought online on a new machine with Docker installed in under 5 minutes from first clone to first successful capture.
 - **SC-006**: The archive retains all entries across container restarts with zero data loss.
@@ -116,11 +117,12 @@ As a developer setting up NomNom on a home server or workstation, I want to laun
 ## Assumptions
 
 - The userscript POSTs JSON to `http://localhost:3002` (root endpoint). The receiver listens on port 3002 by default.
-- The submitted JSON payload follows the structure defined in the existing userscript: `{ url, domain, title, content_markdown, metadata: { type, ...extra } }`.
+- For standard pages, the submitted payload follows the structure: `{ url, domain, title, content_markdown, metadata: { type, ...extra } }`.
+- For YouTube pages, the submitted payload contains only: `{ url, domain, metadata: { type: "youtube_video", video_id } }`. All content is fetched server-side.
 - Content types currently in scope: `reddit_thread`, `github`, `youtube_video`, `generic_article`, `placeholder`.
-- YouTube transcript fetching will be performed server-side using an appropriate tool (selection deferred to planning phase).
+- YouTube content extraction is performed server-side using `yt-dlp`.
 - The receiver is a single-user, local-network tool — no multi-tenancy, user accounts, or rate limiting required for v1.
 - No authentication is required for v1, as the service runs on a trusted local network only.
-- A read/browse interface for stored content is out of scope for this feature unless clarified (see FR-013).
+- A read/browse interface for stored content is out of scope for v1 (FR-013).
 - The container orchestration file will use Docker Compose v2 syntax.
 - Storage volume path will be configurable via environment variable with a sensible default.
