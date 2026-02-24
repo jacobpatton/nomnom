@@ -94,7 +94,7 @@ As a developer setting up NomNom on a home server or workstation, I want to laun
 - **FR-010**: The receiver MUST be fully operable as a containerized service launched via a container orchestration configuration file.
 - **FR-011**: Stored data MUST be persisted to a host-mounted volume so it survives container recreation.
 - **FR-012**: The service MUST start successfully with no configuration beyond what is provided in the compose file.
-- **FR-013**: [NEEDS CLARIFICATION: Should the receiver expose a read interface (e.g., a simple web UI or query endpoint) to browse stored entries, or is it purely a write-only ingest service for v1?]
+- **FR-013**: The receiver is write-only for v1. No read, search, or browse interface is exposed. Stored data is accessible by directly querying the underlying data store.
 
 ### Key Entities
 
