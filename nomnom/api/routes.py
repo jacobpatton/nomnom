@@ -30,10 +30,16 @@ async def ingest(
         logger.exception("[ingest] unexpected error for url=%s", payload.url)
         raise HTTPException(status_code=500, detail="Internal server error") from exc
 
+    # Record is committed to DB at this point.
+    # Schedule enrichment as a background task after the response is sent.
     content_type = payload.metadata.get("type")
     if content_type == "youtube_video":
         video_id = payload.metadata.get("video_id")
         if video_id:
+            try:
+                repository.create_enrichment_job(payload.url)
+            except Exception:
+                logger.exception("[ingest] failed to create enrichment job | url=%s", payload.url)
             from nomnom.services.youtube_service import enrich_youtube_submission
             background_tasks.add_task(enrich_youtube_submission, payload.url, video_id, repository)
 

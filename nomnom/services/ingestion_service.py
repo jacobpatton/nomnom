@@ -45,7 +45,4 @@ class IngestionService:
             content_type,
         )
 
-        if is_youtube:
-            self._repository.create_enrichment_job(payload.url)
-
         return is_insert
