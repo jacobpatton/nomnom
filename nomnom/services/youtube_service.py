@@ -1,7 +1,8 @@
 import logging
 
 import yt_dlp
-from youtube_transcript_api import NoTranscriptFound, TranscriptsDisabled, YouTubeTranscriptApi
+from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisabled
 
 from nomnom.repositories.base import AbstractSubmissionRepository
 
@@ -33,14 +34,15 @@ class YouTubeService:
         Tries English first, then any available language.
         Returns joined plain text. Raises if no transcript is available.
         """
+        api = YouTubeTranscriptApi()
         try:
-            segments = YouTubeTranscriptApi.get_transcript(video_id, languages=["en"])
+            transcript = api.fetch(video_id, languages=["en"])
         except NoTranscriptFound:
-            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
-            segments = transcript_list.find_transcript(
+            transcript_list = api.list(video_id)
+            transcript = transcript_list.find_transcript(
                 [t.language_code for t in transcript_list]
             ).fetch()
-        return " ".join(seg["text"] for seg in segments)
+        return " ".join(seg.text for seg in transcript)
 
     def enrich(self, url: str, video_id: str) -> tuple[dict, str | None]:
         """
