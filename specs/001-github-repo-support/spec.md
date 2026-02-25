@@ -59,7 +59,7 @@ When a user visits the repo homepage with a URL fragment (e.g., `https://github.
 - What happens when a GitHub URL belongs to a user profile or organization page (not a repo), e.g., `https://github.com/owner`? — The system should not attempt to save it as a repo record; the submission is ignored or rejected.
 - What happens when the README is very large? — The system captures it as-is; no truncation is required.
 - What happens if the README is inaccessible (e.g., private repo, network error)? — The record is still saved with the README field empty; no error is surfaced to the user.
-- What happens when the same canonical repo URL is submitted twice? — The system deduplicates on the canonical URL; no duplicate record is created.
+- What happens when the same canonical repo URL is submitted twice? — The system deduplicates on the canonical URL; the existing record is left unchanged and no duplicate is created.
 
 ## Requirements _(mandatory)_
 
@@ -70,7 +70,7 @@ When a user visits the repo homepage with a URL fragment (e.g., `https://github.
 - **FR-003**: System MUST normalize any GitHub URL pointing within a repository (deep links, branch views, file views, issue pages, etc.) to the canonical bare repository URL before saving.
 - **FR-004**: System MUST strip URL fragments (anchor links such as `#readme`) from GitHub repo URLs before deduplication and storage.
 - **FR-005**: System MUST fetch the repository's README content server-side via the public raw content URL (no authentication required) and store it at the time of saving. If the fetch fails or the file does not exist, the README field is stored empty.
-- **FR-006**: System MUST use the canonical repository URL as the unique key to prevent duplicate records.
+- **FR-006**: System MUST use the canonical repository URL as the unique key; if a record for that URL already exists, the submission is silently ignored and no update occurs.
 - **FR-007**: System MUST ignore GitHub URLs that do not resolve to a repository (e.g., user profile pages, organization pages, GitHub root).
 - **FR-008**: System MUST store at minimum: owner username, repository name, canonical URL, and README content for each saved repository.
 
@@ -93,6 +93,7 @@ When a user visits the repo homepage with a URL fragment (e.g., `https://github.
 ### Session 2026-02-24
 
 - Q: How should the README be fetched — by the userscript from the DOM, by the receiver via unauthenticated raw content URL, or by the receiver via the GitHub REST API? → A: Receiver fetches server-side via unauthenticated raw content URL (Option B).
+- Q: When a URL for an already-saved repository is submitted, should the system update the record or skip it? → A: Skip — existing record is left unchanged.
 
 ## Assumptions
 
