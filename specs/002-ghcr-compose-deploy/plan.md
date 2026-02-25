@@ -7,10 +7,9 @@
 
 Most infrastructure already exists: a working `Dockerfile`, a `docker-compose.yml` referencing the GHCR image, and a GitHub Actions workflow that builds and pushes multi-arch images on merge to `main`. The remaining work is small:
 
-1. **Rename** `docker-compose.yml` → `compose.yaml` (Docker Compose v2 canonical name per user's spec)
-2. **Add inline comments** to every configurable line so the file is self-documenting for homelab operators
-3. **Make the GHCR package public** — one-time manual step in GitHub settings (cannot be automated)
-4. **Write a deployment quickstart** so an operator knows exactly what to do
+1. **Add inline comments** to `docker-compose.yml` so every configurable line is self-documenting for homelab operators
+2. **Make the GHCR package public** — one-time manual step in GitHub settings (cannot be automated)
+3. **Write a deployment quickstart** so an operator knows exactly what to do
 
 ## Technical Context
 
@@ -42,7 +41,7 @@ specs/002-ghcr-compose-deploy/
 ### Files Modified / Created at Repository Root
 
 ```text
-compose.yaml                           # RENAMED from docker-compose.yml + comments added
+docker-compose.yml                     # MODIFIED — inline comments added
 .github/workflows/docker-publish.yml   # VERIFIED — no changes needed
 Dockerfile                             # VERIFIED — no changes needed
 .dockerignore                          # VERIFIED — no changes needed
@@ -54,11 +53,10 @@ Dockerfile                             # VERIFIED — no changes needed
 
 ## Phase 0: Research
 
-### Finding 1: `compose.yaml` naming
+### Finding 1: Compose File Name
 
-- **Decision**: Rename `docker-compose.yml` → `compose.yaml`
-- **Rationale**: Docker Compose v2 resolves files in order: `compose.yaml` → `compose.yml` → `docker-compose.yml`. The canonical v2 name is `compose.yaml`. The user's spec explicitly names this file. The existing file already references the GHCR image — no content split needed.
-- **Alternative rejected**: Keeping both files (build-based dev file + image-based prod file) — unnecessary since the existing file already pulls from GHCR.
+- **Decision**: Keep `docker-compose.yml` as-is (user preference)
+- **Rationale**: The file already references the GHCR image and works standalone. `docker-compose.yml` is universally recognized and supported by all Docker Compose versions.
 
 ### Finding 2: GHCR package visibility
 
@@ -69,7 +67,7 @@ Dockerfile                             # VERIFIED — no changes needed
 
 ### Finding 3: Image reference consistency
 
-- **Decision**: Keep `ghcr.io/jacobbednarz/nomnom-receiver:latest`
+- **Decision**: Keep `ghcr.io/jacobpatton/nomnom-receiver:latest`
 - **Rationale**: The existing `docker-compose.yml` already uses this reference. The GH Actions workflow publishes to `ghcr.io/${{ github.repository_owner }}/nomnom-receiver`, which resolves identically. No changes needed to the workflow.
 
 ### Finding 4: Existing workflow is complete
@@ -109,7 +107,7 @@ services:
   nomnom-receiver:
     # Pre-built image from GitHub Container Registry.
     # Run `docker compose pull && docker compose up -d` to upgrade.
-    image: ghcr.io/jacobbednarz/nomnom-receiver:latest
+    image: ghcr.io/jacobpatton/nomnom-receiver:latest
 
     ports:
       # Host:container port mapping.

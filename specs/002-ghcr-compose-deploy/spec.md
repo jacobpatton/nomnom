@@ -9,15 +9,15 @@
 
 ### User Story 1 - One-File Homelab Deployment (Priority: P1)
 
-As a homelab operator, I want to deploy the NomNom receiver on any machine by copying a single `compose.yaml` file and running one command — no source code, no build tools, no dependency installation required.
+As a homelab operator, I want to deploy the NomNom receiver on any machine by copying a single `docker-compose.yml` file and running one command — no source code, no build tools, no dependency installation required.
 
 **Why this priority**: This is the stated goal: self-contained deployment. If a homelab operator has to do anything beyond copying one file and running one command, the feature has not succeeded.
 
-**Independent Test**: Copy only `compose.yaml` to a machine with Docker installed (no source code present). Run `docker compose up -d`. Confirm the service is reachable and accepting submissions within 30 seconds.
+**Independent Test**: Copy only `docker-compose.yml` to a machine with Docker installed (no source code present). Run `docker compose up -d`. Confirm the service is reachable and accepting submissions within 30 seconds.
 
 **Acceptance Scenarios**:
 
-1. **Given** a machine with Docker installed and no source code present, **When** the operator runs `docker compose up -d` with the provided `compose.yaml`, **Then** the receiver starts, is reachable on port 3002, and returns a healthy status.
+1. **Given** a machine with Docker installed and no source code present, **When** the operator runs `docker compose up -d` with the provided `docker-compose.yml`, **Then** the receiver starts, is reachable on port 3002, and returns a healthy status.
 2. **Given** the service is running, **When** the operator stops and restarts the container, **Then** all previously stored data is still accessible — nothing is lost.
 3. **Given** the service is running, **When** the userscript sends a submission, **Then** it is accepted and stored as expected.
 4. **Given** the operator wants to change the data storage location or log level, **When** they edit the environment variables in `compose.yaml`, **Then** the service uses the new configuration on next start.
@@ -66,16 +66,16 @@ As a homelab operator, I want to pull the container image without needing to aut
 
 ### Functional Requirements
 
-- **FR-001**: A `compose.yaml` file MUST exist in the repository that, by itself, is sufficient to deploy the receiver service on any machine with Docker installed — no source code or build step required.
-- **FR-002**: The `compose.yaml` MUST reference a pre-built image from the GitHub Container Registry rather than building locally.
+- **FR-001**: A `docker-compose.yml` file MUST exist in the repository that, by itself, is sufficient to deploy the receiver service on any machine with Docker installed — no source code or build step required.
+- **FR-002**: The `docker-compose.yml` MUST reference a pre-built image from the GitHub Container Registry rather than building locally.
 - **FR-003**: The image MUST be publicly accessible on GHCR so no registry authentication is needed to pull it.
-- **FR-004**: The `compose.yaml` MUST configure a named volume so stored data persists across container restarts and upgrades.
-- **FR-005**: The `compose.yaml` MUST include a health check so Docker can report whether the service is ready.
-- **FR-006**: The `compose.yaml` MUST be configured with a restart policy so the service automatically recovers from crashes or reboots.
+- **FR-004**: The `docker-compose.yml` MUST configure a named volume so stored data persists across container restarts and upgrades.
+- **FR-005**: The `docker-compose.yml` MUST include a health check so Docker can report whether the service is ready.
+- **FR-006**: The `docker-compose.yml` MUST be configured with a restart policy so the service automatically recovers from crashes or reboots.
 - **FR-007**: The image MUST be automatically built and published to GHCR whenever a change is merged to the main branch, without any manual steps.
 - **FR-008**: The published image MUST support both AMD64 and ARM64 processor architectures to accommodate common homelab hardware.
-- **FR-009**: The `compose.yaml` MUST include inline comments explaining each configurable value so the operator understands what to change for their environment.
-- **FR-010**: The image reference in `compose.yaml` MUST use a stable tag so the file does not need to be updated to receive new versions.
+- **FR-009**: The `docker-compose.yml` MUST include inline comments explaining each configurable value so the operator understands what to change for their environment.
+- **FR-010**: The image reference in `docker-compose.yml` MUST use a stable tag so the file does not need to be updated to receive new versions.
 
 ### Key Entities
 

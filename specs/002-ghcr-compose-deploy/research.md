@@ -4,9 +4,9 @@
 
 ## Decision 1: Compose File Name
 
-- **Decision**: `compose.yaml` (rename from `docker-compose.yml`)
-- **Rationale**: Docker Compose v2 prefers `compose.yaml` as the canonical filename. It resolves files in order: `compose.yaml` → `compose.yml` → `docker-compose.yml`. Using the canonical name satisfies the user's explicit requirement ("deployable from a `compose.yaml` file, alone") and aligns with the Docker Compose v2 specification.
-- **Alternatives considered**: Keeping `docker-compose.yml` — works functionally but doesn't match the stated requirement and is the legacy name.
+- **Decision**: Keep `docker-compose.yml` (user preference)
+- **Rationale**: The file already references the GHCR image and works standalone. `docker-compose.yml` is universally recognized by all Docker Compose versions.
+- **Alternatives considered**: Renaming to `compose.yaml` (Docker Compose v2 canonical name) — rejected per user instruction.
 
 ## Decision 2: GHCR Package Visibility
 
@@ -18,8 +18,8 @@
 
 ## Decision 3: Image Reference Format
 
-- **Decision**: `ghcr.io/jacobbednarz/nomnom-receiver:latest`
-- **Rationale**: This matches what the existing workflow publishes. Using `latest` as the tag in `compose.yaml` means the operator gets updates with `docker compose pull` without editing the file — satisfying FR-010. The `sha-<hash>` tag published by the workflow provides an audit trail but is not required in `compose.yaml`.
+- **Decision**: `ghcr.io/jacobpatton/nomnom-receiver:latest`
+- **Rationale**: This matches what the existing workflow publishes. Using `latest` as the tag in `docker-compose.yml` means the operator gets updates with `docker compose pull` without editing the file — satisfying FR-010. The `sha-<hash>` tag published by the workflow provides an audit trail but is not required in `docker-compose.yml`.
 - **Alternatives considered**: Using `ghcr.io/${{ github.repository }}` style reference — not possible in a static YAML file consumed outside of GitHub Actions context.
 
 ## Decision 4: Port Binding Strategy

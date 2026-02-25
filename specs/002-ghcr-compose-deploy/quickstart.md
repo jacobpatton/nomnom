@@ -24,18 +24,18 @@ docker version
 
 This step is required so you can pull the image without credentials. Do this once after the first GitHub Actions build completes.
 
-1. Go to: `https://github.com/users/jacobbednarz/packages/container/nomnom-receiver/settings`
+1. Go to: `https://github.com/users/jacobpatton/packages/container/nomnom-receiver/settings`
 2. Scroll to **Danger Zone** → **Change package visibility**
 3. Set to **Public**
 4. Confirm
 
-After this, anyone with `compose.yaml` can pull the image without a GitHub account or token.
+After this, anyone with `docker-compose.yml` can pull the image without a GitHub account or token.
 
 ---
 
 ## 3. Deploy
 
-Copy `compose.yaml` to your homelab machine (or paste its contents into a new file). Then:
+Copy `docker-compose.yml` to your homelab machine (or paste its contents into a new file). Then:
 
 ```bash
 docker compose up -d
@@ -108,7 +108,7 @@ docker compose down -v
 
 ## Configuration Reference
 
-All configuration is via environment variables in `compose.yaml`:
+All configuration is via environment variables in `docker-compose.yml`:
 
 | Variable    | Default           | Description                                        |
 | ----------- | ----------------- | -------------------------------------------------- |

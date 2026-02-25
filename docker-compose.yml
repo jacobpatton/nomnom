@@ -1,6 +1,6 @@
 services:
   nomnom-receiver:
-    image: ghcr.io/jacobbednarz/nomnom-receiver:latest
+    image: ghcr.io/jacobpatton/nomnom-receiver:latest
     ports:
       - "127.0.0.1:3002:3002"
     volumes:
