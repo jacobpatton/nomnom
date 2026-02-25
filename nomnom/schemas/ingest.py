@@ -1,4 +1,4 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, model_validator
 
 
 class IngestRequest(BaseModel):
@@ -21,6 +21,14 @@ class IngestRequest(BaseModel):
         if not v or not v.strip():
             raise ValueError("domain must not be empty")
         return v
+
+    @model_validator(mode="after")
+    def normalize_youtube_url(self) -> "IngestRequest":
+        if self.metadata.get("type") == "youtube_video":
+            video_id = self.metadata.get("video_id")
+            if video_id:
+                self.url = f"https://www.youtube.com/watch?v={video_id}"
+        return self
 
 
 class IngestResponse(BaseModel):

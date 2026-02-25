@@ -1,4 +1,5 @@
 import logging
+from urllib.parse import urlparse
 
 from nomnom.models.submission import Submission
 from nomnom.repositories.base import AbstractSubmissionRepository
@@ -9,9 +10,21 @@ logger = logging.getLogger(__name__)
 KNOWN_CONTENT_TYPES = {"reddit_thread", "github", "youtube_video", "generic_article", "placeholder"}
 
 
+class SubmissionSkipped(Exception):
+    pass
+
+
 class IngestionService:
     def __init__(self, repository: AbstractSubmissionRepository) -> None:
         self._repository = repository
+
+    def check_submission(self, payload: IngestRequest) -> None:
+        """Raises SubmissionSkipped if this submission should be silently ignored."""
+        content_type = payload.metadata.get("type", "placeholder")
+        if content_type == "reddit_thread":
+            path = urlparse(payload.url).path
+            if "/comments/" not in path:
+                raise SubmissionSkipped("Reddit non-post URL filtered")
 
     def ingest(self, payload: IngestRequest) -> bool:
         """

@@ -78,16 +78,27 @@ The receiver ignores `title` and `content_markdown` for YouTube submissions and 
 
 ## Responses
 
-### Success
+### Success (Queued)
 
 ```
 HTTP/1.1 200 OK
 Content-Type: application/json
 
-{ "status": "ok", "message": "Archived" }
+{ "status": "queued", "message": "Queued" }
 ```
 
-The userscript treats any `200` response as success and shows the success toast.
+The submission has been accepted and will be written to the database asynchronously. The userscript treats any `200` response as success and shows the success toast. Both `"ok"` and `"queued"` values for `status` are treated as success.
+
+### Filtered (Skipped)
+
+```
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{ "status": "skipped", "message": "Filtered: Reddit non-post URL" }
+```
+
+The submission was intentionally ignored (e.g., a Reddit homepage or subreddit listing rather than a post). No record is stored. The userscript treats this as a success response.
 
 ### Validation Error
 
@@ -128,5 +139,8 @@ Used by Docker Compose healthcheck. Returns `200 OK` when the service is ready.
 ## Behaviour Notes
 
 - **Upsert semantics**: Submitting an existing URL updates the record rather than creating a duplicate. The `ingested_at` timestamp is preserved; `updated_at` is refreshed.
+- **YouTube URL normalization**: Any YouTube URL submitted with a `video_id` in metadata is normalized to `https://www.youtube.com/watch?v={video_id}` before storage. URLs with timestamps (`&t=`), playlist params (`&list=`), or other variants all deduplicate to the same canonical URL.
+- **Reddit filtering**: Submissions with `metadata.type = "reddit_thread"` are only stored if the URL contains `/comments/` in the path. Homepage, subreddit listings, and user profiles are silently filtered — the endpoint returns `{"status":"skipped"}`.
+- **Async write**: All accepted submissions are written to the database asynchronously after the response is sent. The `200 OK` with `status="queued"` confirms the submission was accepted, not that it was written.
 - **YouTube enrichment**: For YouTube submissions, the receiver returns `200 OK` immediately after accepting the payload. Enrichment runs asynchronously — the userscript does not wait for it.
 - **Enrichment failure**: A failed YouTube enrichment does not cause the endpoint to return an error. The submission is stored and the failure is recorded internally.
