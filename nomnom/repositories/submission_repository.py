@@ -85,22 +85,19 @@ class SubmissionRepository(AbstractSubmissionRepository):
     def update_submission_content(
         self,
         url: str,
-        title: str,
-        content_markdown: str,
-        metadata: dict,
+        content_markdown: str | None,
         enrichment_status: str,
         enrichment_error: str | None = None,
     ) -> None:
-        """Update a submission's content after server-side enrichment."""
+        """Update a submission's content after server-side enrichment. Title is preserved."""
         with get_connection(self._db_path) as conn:
             conn.execute(
                 """
                 UPDATE submissions
-                SET title = ?, content_markdown = ?, metadata = ?,
-                    enrichment_status = ?, enrichment_error = ?,
+                SET content_markdown = ?, enrichment_status = ?, enrichment_error = ?,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE url = ?
                 """,
-                (title, content_markdown, json.dumps(metadata), enrichment_status, enrichment_error, url),
+                (content_markdown, enrichment_status, enrichment_error, url),
             )
             conn.commit()

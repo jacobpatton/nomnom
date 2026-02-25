@@ -22,10 +22,8 @@ class AbstractSubmissionRepository(ABC):
     def update_submission_content(
         self,
         url: str,
-        title: str | None,
         content_markdown: str | None,
-        metadata: dict,
         enrichment_status: str,
         enrichment_error: str | None = None,
     ) -> None:
-        """Update a submission's content after server-side enrichment."""
+        """Update a submission's content after server-side enrichment. Title is preserved."""

@@ -1,6 +1,5 @@
 import logging
 
-import yt_dlp
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisabled
 
@@ -10,24 +9,6 @@ logger = logging.getLogger(__name__)
 
 
 class YouTubeService:
-    def fetch_metadata(self, url: str) -> dict:
-        """Fetch video metadata via yt-dlp. Raises on failure."""
-        ydl_opts = {
-            "skip_download": True,
-            "quiet": True,
-            "no_warnings": True,
-        }
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=False)
-        return {
-            "title": info.get("title"),
-            "description": info.get("description"),
-            "uploader": info.get("uploader"),
-            "duration": info.get("duration"),
-            "upload_date": info.get("upload_date"),
-            "view_count": info.get("view_count"),
-        }
-
     def fetch_transcript(self, video_id: str) -> str:
         """
         Fetch transcript text for a YouTube video.
@@ -44,44 +25,23 @@ class YouTubeService:
             ).fetch()
         return " ".join(seg.text for seg in transcript)
 
-    def enrich(self, url: str, video_id: str) -> tuple[dict, str | None]:
+    def enrich(self, video_id: str) -> tuple[str | None, str | None]:
         """
-        Fetch full video data (metadata + transcript).
-        Returns (enriched_metadata, error_string).
+        Fetch transcript for a YouTube video.
+        Returns (transcript_markdown, error_string).
         Never raises — errors are captured and returned as the second element.
         """
-        metadata: dict = {"type": "youtube_video", "video_id": video_id}
-        title = None
-        content_markdown = None
-        error: str | None = None
-
         try:
-            meta = self.fetch_metadata(url)
-            title = meta.pop("title", None)
-            description = meta.pop("description", None)
-            metadata.update(meta)
-
-            try:
-                transcript = self.fetch_transcript(video_id)
-                word_count = len(transcript.split())
-                logger.info(
-                    "[youtube] transcript fetched | video_id=%s | words=%d", video_id, word_count
-                )
-                content_markdown = f"## Description\n\n{description or ''}\n\n## Transcript\n\n{transcript}"
-            except (NoTranscriptFound, TranscriptsDisabled) as exc:
-                logger.info("[youtube] no transcript available | video_id=%s | reason=%s", video_id, exc)
-                content_markdown = f"## Description\n\n{description or ''}"
-                metadata["transcript_unavailable"] = True
-
+            transcript = self.fetch_transcript(video_id)
+            word_count = len(transcript.split())
+            logger.info("[youtube] transcript fetched | video_id=%s | words=%d", video_id, word_count)
+            return f"## Transcript\n\n{transcript}", None
+        except (NoTranscriptFound, TranscriptsDisabled) as exc:
+            logger.info("[youtube] no transcript available | video_id=%s | reason=%s", video_id, exc)
+            return None, f"no transcript available: {exc}"
         except Exception as exc:
-            error = str(exc)
-            logger.error("[youtube] enrichment failed | video_id=%s | error=%s", video_id, error)
-
-        return {
-            "title": title,
-            "content_markdown": content_markdown,
-            "metadata": metadata,
-        }, error
+            logger.error("[youtube] enrichment failed | video_id=%s | error=%s", video_id, exc)
+            return None, str(exc)
 
 
 async def enrich_youtube_submission(
@@ -91,14 +51,12 @@ async def enrich_youtube_submission(
     import asyncio
 
     service = YouTubeService()
-    result, error = await asyncio.to_thread(service.enrich, url, video_id)
+    content_markdown, error = await asyncio.to_thread(service.enrich, video_id)
 
     if error:
         repository.update_submission_content(
             url=url,
-            title=result.get("title"),
-            content_markdown=result.get("content_markdown"),
-            metadata=result.get("metadata", {}),
+            content_markdown=None,
             enrichment_status="failed",
             enrichment_error=error,
         )
@@ -106,9 +64,7 @@ async def enrich_youtube_submission(
     else:
         repository.update_submission_content(
             url=url,
-            title=result.get("title"),
-            content_markdown=result.get("content_markdown"),
-            metadata=result.get("metadata", {}),
+            content_markdown=content_markdown,
             enrichment_status="complete",
         )
         repository.update_enrichment_job_status(url, "complete")
