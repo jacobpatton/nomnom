@@ -113,6 +113,46 @@ Single project: `nomnom/` package at repository root, `tests/` alongside it.
 
 ---
 
+## Phase 8: Improvements — Dedup, Filtering & Speed
+
+**Purpose**: Three targeted fixes to the working codebase based on real-world usage. No schema changes, no new files — surgical edits to three existing files.
+
+**Reference**: `specs/001-nomnom-receiver/plan.md` (2026-02-24 revision)
+
+### a) Update Contract Doc
+
+- [ ] T029 Update `specs/001-nomnom-receiver/contracts/ingest-endpoint.md` — document two new response shapes alongside the existing `{"status":"ok"}` example: `{"status":"queued","message":"Queued"}` (accepted submissions, backwards-compatible — userscript treats any 200 as success) and `{"status":"skipped","message":"Filtered: Reddit non-post URL"}` (filtered submissions)
+
+### b) YouTube Duplicate Prevention [US3]
+
+**Goal**: Any YouTube URL variant (timestamps, playlist params, etc.) normalizes to `https://www.youtube.com/watch?v={video_id}` at parse time, so the existing `UNIQUE(url)` constraint handles deduplication automatically.
+
+**Independent Test**: POST `https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=PLxxx&t=42` with `video_id=dQw4w9WgXcQ`, then POST `https://www.youtube.com/watch?v=dQw4w9WgXcQ` — DB has exactly 1 row with URL `https://www.youtube.com/watch?v=dQw4w9WgXcQ`.
+
+- [ ] T030 [P] [US3] Add `model_validator(mode="after")` to `IngestRequest` in `nomnom/schemas/ingest.py` — import `model_validator` from `pydantic`; when `self.metadata.get("type") == "youtube_video"` and `video_id = self.metadata.get("video_id")` is truthy, set `self.url = f"https://www.youtube.com/watch?v={video_id}"` and return `self`
+
+### c) Reddit Homepage Filter [US1]
+
+**Goal**: Reject Reddit submissions that are not posts (homepage, subreddit listings, user profiles). Only URLs containing `/comments/` in the path are accepted.
+
+**Independent Test**: POST `https://www.reddit.com/` with `metadata.type="reddit_thread"` → response `{"status":"skipped"}`. POST `https://www.reddit.com/r/Python/comments/abc123/title/` → response `{"status":"queued"}` and DB record appears.
+
+- [ ] T031 [P] [US1] Add `SubmissionSkipped` exception class and `check_submission(payload: IngestRequest) -> None` method to `IngestionService` in `nomnom/services/ingestion_service.py` — import `urlparse` from `urllib.parse`; `check_submission` raises `SubmissionSkipped("Reddit non-post URL filtered")` when `metadata.type == "reddit_thread"` and `/comments/` is not in `urlparse(payload.url).path`
+
+### d) Faster Browser Response [US1]
+
+**Goal**: Return 200 to the browser before the DB write. Move the synchronous DB write (and YouTube enrichment) into a single background task. Response is near-instant regardless of content type.
+
+**Independent Test**: POST any article URL and measure response time — should be < 50ms. DB record appears within ~1 second after response. YouTube enrichment still completes asynchronously.
+
+- [ ] T032 [US1] Add async `_process_submission(payload, ingestion_service, repository)` helper in `nomnom/api/routes.py` — runs `await asyncio.to_thread(ingestion_service.ingest, payload)`; then if `metadata.type == "youtube_video"` and `video_id` present: `await asyncio.to_thread(repository.create_enrichment_job, payload.url)` then `await enrich_youtube_submission(payload.url, video_id, repository)`; wraps each step in try/except with `logger.exception` on failure (depends on T031)
+
+- [ ] T033 [US1] Refactor `ingest` route handler in `nomnom/api/routes.py` — (1) import `SubmissionSkipped` from `nomnom.services.ingestion_service`; (2) call `ingestion_service.check_submission(payload)` synchronously and return `IngestResponse(status="skipped", message="Filtered: Reddit non-post URL")` on `SubmissionSkipped`; (3) register `_process_submission` as background task; (4) return `IngestResponse(status="queued", message="Queued")` immediately — remove old inline `create_enrichment_job` call and `enrich_youtube_submission` background task registration from route body (depends on T031, T032)
+
+**Checkpoint**: Reddit homepage POST returns `{"status":"skipped"}`. Any other POST returns `{"status":"queued"}` near-instantly. DB write and YouTube enrichment complete in background.
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
