@@ -82,6 +82,27 @@ class SubmissionRepository(AbstractSubmissionRepository):
             )
             conn.commit()
 
+    def exists_by_url(self, url: str) -> bool:
+        with get_connection(self._db_path) as conn:
+            row = conn.execute(
+                "SELECT 1 FROM submissions WHERE url = ? LIMIT 1", (url,)
+            ).fetchone()
+            return row is not None
+
+    def insert_github_repo(self, url: str, owner: str, repo: str, readme: str) -> None:
+        metadata_json = json.dumps({"owner": owner, "repo": repo})
+        with get_connection(self._db_path) as conn:
+            conn.execute(
+                """
+                INSERT INTO submissions
+                    (url, domain, title, content_markdown, content_type,
+                     metadata, enrichment_status)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (url, "github.com", f"{owner}/{repo}", readme, "github_repo", metadata_json, "none"),
+            )
+            conn.commit()
+
     def update_submission_content(
         self,
         url: str,

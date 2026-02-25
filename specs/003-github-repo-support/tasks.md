@@ -20,7 +20,7 @@ Single project: source in `nomnom/`, tests in `tests/`
 
 **Purpose**: Verify httpx dependency is available for async README fetches
 
-- [ ] T001 Verify `httpx` is listed in requirements/dependencies (check `requirements.txt` or `pyproject.toml`); add it if missing
+- [x] T001 Verify `httpx` is listed in requirements/dependencies (check `requirements.txt` or `pyproject.toml`); add it if missing
 
 ---
 
@@ -30,8 +30,8 @@ Single project: source in `nomnom/`, tests in `tests/`
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T002 Add `exists_by_url(url: str) -> bool` method to `nomnom/repositories/submission_repository.py` — `SELECT 1 FROM submissions WHERE url = ? LIMIT 1`
-- [ ] T003 Add `insert_github_repo(url, owner, repo, readme) -> None` method to `nomnom/repositories/submission_repository.py` — INSERT into submissions with `content_type="github_repo"`, `domain="github.com"`, `title="<owner>/<repo>"`, `metadata={"owner": ..., "repo": ...}`, `enrichment_status="none"`
+- [x] T002 Add `exists_by_url(url: str) -> bool` method to `nomnom/repositories/submission_repository.py` — `SELECT 1 FROM submissions WHERE url = ? LIMIT 1`
+- [x] T003 Add `insert_github_repo(url, owner, repo, readme) -> None` method to `nomnom/repositories/submission_repository.py` — INSERT into submissions with `content_type="github_repo"`, `domain="github.com"`, `title="<owner>/<repo>"`, `metadata={"owner": ..., "repo": ...}`, `enrichment_status="none"`
 
 **Checkpoint**: Foundation ready — user story implementation can now begin
 
@@ -45,14 +45,14 @@ Single project: source in `nomnom/`, tests in `tests/`
 
 ### Implementation for User Story 1
 
-- [ ] T004 [US1] Create `nomnom/services/github_service.py` with `GithubService` class skeleton: define `BLOCKED_PREFIXES` set (`orgs`, `users`, `features`, `marketplace`, `settings`, `notifications`, `dashboard`, `explore`, `pulls`, `issues`, `sponsors`) and stub signatures for `normalize_url` and `fetch_readme`
-- [ ] T005 [US1] Implement `GithubService.normalize_url(url: str) -> tuple[str, str, str] | None` in `nomnom/services/github_service.py`: parse URL, verify host is `github.com`, split path segments, reject if fewer than 2 segments or first segment is in `BLOCKED_PREFIXES`, strip fragment, return `(canonical_url, owner, repo)` where `canonical_url = https://github.com/<seg0>/<seg1>`
-- [ ] T006 [US1] Implement `async def GithubService.fetch_readme(owner: str, repo: str) -> str` in `nomnom/services/github_service.py`: async GET `https://raw.githubusercontent.com/<owner>/<repo>/HEAD/README.md` via httpx with a short timeout; return response text on HTTP 200, empty string on any other status or exception
-- [ ] T007 [US1] Add `_ingest_github(submission) -> IngestResponse` method to `nomnom/services/ingestion_service.py` and wire it into `ingest()`: if `submission.domain == "github.com"`, call `github_service.normalize_url(submission.url)`; if None return skipped; if `repo.exists_by_url(canonical_url)` return skipped; else fetch README and call `repo.insert_github_repo(...)`, return saved
-- [ ] T008 [US1] Write unit tests in `tests/unit/test_github_service.py` — `normalize_url` with bare repo URL returns correct `(canonical_url, owner, repo)` tuple; `fetch_readme` with mocked httpx 200 returns content; `fetch_readme` with mocked httpx 404 returns `""`; `fetch_readme` with mocked httpx timeout returns `""`
-- [ ] T014 [P] [US1] Add unit tests to `tests/unit/test_github_service.py` — `normalize_url` with profile URL `https://github.com/owner` (1 segment) returns `None`; `normalize_url` with `https://github.com/orgs/myorg/teams` (blocked prefix) returns `None`; `normalize_url` with `https://github.com/settings/profile` returns `None`
-- [ ] T009 [US1] Write integration tests in `tests/integration/test_github_ingest.py` — (1) POST `{"url": "https://github.com/owner/repo", "domain": "github.com"}` (README fetch mocked) → status `"saved"`, one record in DB with `url="https://github.com/owner/repo"`, `title="owner/repo"`, `content_type="github_repo"`, `metadata={"owner":"owner","repo":"repo"}`; (2) POST the same URL a second time → status `"skipped"`, DB record count unchanged
-- [ ] T015 [P] [US1] Add integration tests to `tests/integration/test_github_ingest.py` — POST `{"url": "https://github.com/owner", "domain": "github.com"}` → status `"skipped"`, no record created; POST `{"url": "https://github.com/orgs/myorg", "domain": "github.com"}` → status `"skipped"`, no record created
+- [x] T004 [US1] Create `nomnom/services/github_service.py` with `GithubService` class skeleton: define `BLOCKED_PREFIXES` set (`orgs`, `users`, `features`, `marketplace`, `settings`, `notifications`, `dashboard`, `explore`, `pulls`, `issues`, `sponsors`) and stub signatures for `normalize_url` and `fetch_readme`
+- [x] T005 [US1] Implement `GithubService.normalize_url(url: str) -> tuple[str, str, str] | None` in `nomnom/services/github_service.py`: parse URL, verify host is `github.com`, split path segments, reject if fewer than 2 segments or first segment is in `BLOCKED_PREFIXES`, strip fragment, return `(canonical_url, owner, repo)` where `canonical_url = https://github.com/<seg0>/<seg1>`
+- [x] T006 [US1] Implement `async def GithubService.fetch_readme(owner: str, repo: str) -> str` in `nomnom/services/github_service.py`: async GET `https://raw.githubusercontent.com/<owner>/<repo>/HEAD/README.md` via httpx with a short timeout; return response text on HTTP 200, empty string on any other status or exception
+- [x] T007 [US1] Add `_ingest_github(submission) -> IngestResponse` method to `nomnom/services/ingestion_service.py` and wire it into `ingest()`: if `submission.domain == "github.com"`, call `github_service.normalize_url(submission.url)`; if None return skipped; if `repo.exists_by_url(canonical_url)` return skipped; else fetch README and call `repo.insert_github_repo(...)`, return saved
+- [x] T008 [US1] Write unit tests in `tests/unit/test_github_service.py` — `normalize_url` with bare repo URL returns correct `(canonical_url, owner, repo)` tuple; `fetch_readme` with mocked httpx 200 returns content; `fetch_readme` with mocked httpx 404 returns `""`; `fetch_readme` with mocked httpx timeout returns `""`
+- [x] T014 [P] [US1] Add unit tests to `tests/unit/test_github_service.py` — `normalize_url` with profile URL `https://github.com/owner` (1 segment) returns `None`; `normalize_url` with `https://github.com/orgs/myorg/teams` (blocked prefix) returns `None`; `normalize_url` with `https://github.com/settings/profile` returns `None`
+- [x] T009 [US1] Write integration tests in `tests/integration/test_github_ingest.py` — (1) POST `{"url": "https://github.com/owner/repo", "domain": "github.com"}` (README fetch mocked) → status `"saved"`, one record in DB with `url="https://github.com/owner/repo"`, `title="owner/repo"`, `content_type="github_repo"`, `metadata={"owner":"owner","repo":"repo"}`; (2) POST the same URL a second time → status `"skipped"`, DB record count unchanged
+- [x] T015 [P] [US1] Add integration tests to `tests/integration/test_github_ingest.py` — POST `{"url": "https://github.com/owner", "domain": "github.com"}` → status `"skipped"`, no record created; POST `{"url": "https://github.com/orgs/myorg", "domain": "github.com"}` → status `"skipped"`, no record created
 
 **Checkpoint**: US1 complete — MVP deliverable. Verify with quickstart if available.
 
@@ -66,8 +66,8 @@ Single project: source in `nomnom/`, tests in `tests/`
 
 ### Implementation for User Story 2
 
-- [ ] T010 [P] [US2] Add unit tests to `tests/unit/test_github_service.py` — `normalize_url` with `https://github.com/owner/repo/blob/main/file.py` returns `("https://github.com/owner/repo", "owner", "repo")`; `normalize_url` with `https://github.com/owner/repo/issues/42` returns correct tuple; `normalize_url` with `https://github.com/owner/repo/tree/feature-branch` returns correct tuple
-- [ ] T011 [P] [US2] Add integration tests to `tests/integration/test_github_ingest.py` — POST deep link URL `https://github.com/owner/repo/blob/main/somefile.py` → status `"saved"`, stored `url` equals `"https://github.com/owner/repo"` (sub-path stripped); POST issue URL `https://github.com/owner/repo/issues/42` → same canonical URL stored
+- [x] T010 [P] [US2] Add unit tests to `tests/unit/test_github_service.py` — `normalize_url` with `https://github.com/owner/repo/blob/main/file.py` returns `("https://github.com/owner/repo", "owner", "repo")`; `normalize_url` with `https://github.com/owner/repo/issues/42` returns correct tuple; `normalize_url` with `https://github.com/owner/repo/tree/feature-branch` returns correct tuple
+- [x] T011 [P] [US2] Add integration tests to `tests/integration/test_github_ingest.py` — POST deep link URL `https://github.com/owner/repo/blob/main/somefile.py` → status `"saved"`, stored `url` equals `"https://github.com/owner/repo"` (sub-path stripped); POST issue URL `https://github.com/owner/repo/issues/42` → same canonical URL stored
 
 **Checkpoint**: US2 complete — deep links normalized correctly alongside US1 behavior.
 
@@ -81,8 +81,8 @@ Single project: source in `nomnom/`, tests in `tests/`
 
 ### Implementation for User Story 3
 
-- [ ] T012 [P] [US3] Add unit tests to `tests/unit/test_github_service.py` — `normalize_url` with `https://github.com/owner/repo#readme` returns `("https://github.com/owner/repo", "owner", "repo")` (fragment stripped); `normalize_url` with `https://github.com/owner/repo#installation` returns same canonical URL
-- [ ] T013 [P] [US3] Add integration tests to `tests/integration/test_github_ingest.py` — POST `https://github.com/owner/repo` → saved; then POST `https://github.com/owner/repo#readme` → status `"skipped"`, DB record count for this repo is still 1; POST `https://github.com/owner/repo#installation` fresh (no prior record) → status `"saved"`, stored URL has no fragment
+- [x] T012 [P] [US3] Add unit tests to `tests/unit/test_github_service.py` — `normalize_url` with `https://github.com/owner/repo#readme` returns `("https://github.com/owner/repo", "owner", "repo")` (fragment stripped); `normalize_url` with `https://github.com/owner/repo#installation` returns same canonical URL
+- [x] T013 [P] [US3] Add integration tests to `tests/integration/test_github_ingest.py` — POST `https://github.com/owner/repo` → saved; then POST `https://github.com/owner/repo#readme` → status `"skipped"`, DB record count for this repo is still 1; POST `https://github.com/owner/repo#installation` fresh (no prior record) → status `"saved"`, stored URL has no fragment
 
 **Checkpoint**: US3 complete — all three user stories fully functional and tested independently.
 
@@ -92,8 +92,8 @@ Single project: source in `nomnom/`, tests in `tests/`
 
 **Purpose**: README failure scenarios and full suite validation
 
-- [ ] T016 Add integration test to `tests/integration/test_github_ingest.py` — POST valid repo URL with README fetch mocked to return 404 → status `"saved"`, record created with `content_markdown=""` (empty string)
-- [ ] T017 Run full test suite (`pytest tests/`) and confirm all tests pass
+- [x] T016 Add integration test to `tests/integration/test_github_ingest.py` — POST valid repo URL with README fetch mocked to return 404 → status `"saved"`, record created with `content_markdown=""` (empty string)
+- [x] T017 Run full test suite (`pytest tests/`) and confirm all tests pass
 
 ---
 
