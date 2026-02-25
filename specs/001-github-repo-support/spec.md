@@ -58,7 +58,7 @@ When a user visits the repo homepage with a URL fragment (e.g., `https://github.
 
 - What happens when a GitHub URL belongs to a user profile or organization page (not a repo), e.g., `https://github.com/owner`? — The system should not attempt to save it as a repo record; the submission is ignored or rejected.
 - What happens when the README is very large? — The system captures it as-is; no truncation is required.
-- What happens if the README is inaccessible (e.g., private repo, network error)? — The record is still saved with the README field empty; no error is surfaced to the user.
+- What happens if the README fetch fails for any reason (private repo, network error, rate-limit)? — The record is saved with the README field empty; no retry is attempted and no error is surfaced to the user or userscript.
 - What happens when the same canonical repo URL is submitted twice? — The system deduplicates on the canonical URL; the existing record is left unchanged and no duplicate is created.
 
 ## Requirements _(mandatory)_
@@ -94,6 +94,7 @@ When a user visits the repo homepage with a URL fragment (e.g., `https://github.
 
 - Q: How should the README be fetched — by the userscript from the DOM, by the receiver via unauthenticated raw content URL, or by the receiver via the GitHub REST API? → A: Receiver fetches server-side via unauthenticated raw content URL (Option B).
 - Q: When a URL for an already-saved repository is submitted, should the system update the record or skip it? → A: Skip — existing record is left unchanged.
+- Q: When the README fetch fails (rate-limit, network error, or unavailable), what should happen? → A: Save the record with an empty README field; treat all fetch failures the same way, no retry, no error to the userscript.
 
 ## Assumptions
 
