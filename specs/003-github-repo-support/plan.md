@@ -106,8 +106,8 @@ GithubService
     # Parse URL, check domain, validate 2+ path segments, blocklist check
     # Return https://github.com/<owner>/<repo>
 
-  fetch_readme(owner: str, repo: str) -> str
-    # GET https://raw.githubusercontent.com/<owner>/<repo>/HEAD/README.md
+  async def fetch_readme(owner: str, repo: str) -> str
+    # async GET https://raw.githubusercontent.com/<owner>/<repo>/HEAD/README.md
     # Return content on 200, empty string on any error (404, timeout, rate-limit)
 ```
 
