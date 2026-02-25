@@ -1,20 +1,39 @@
+# docker-compose.yml — NomNom Receiver homelab deployment
+# Requirements: Docker Engine on Linux (amd64 or arm64)
+# Usage: docker compose up -d
+
 services:
   nomnom-receiver:
-    image: ghcr.io/jacobbednarz/nomnom-receiver:latest
+    # Pre-built image from GitHub Container Registry.
+    # Run `docker compose pull && docker compose up -d` to upgrade to the latest version.
+    image: ghcr.io/jacobpatton/nomnom-receiver:latest
+
     ports:
+      # Host:container port mapping. Change the left value (e.g. "3003:3002") if port 3002 is in use.
+      # Bound to loopback only — not exposed directly on the LAN.
       - "127.0.0.1:3002:3002"
+
     volumes:
+      # Named volume for the SQLite database. Persists across restarts and image upgrades.
       - nomnom_data:/data
+
     environment:
+      # Path inside the container where the database file lives. Keep in sync with the volume mount (/data).
       DB_PATH: /data/nomnom.db
+      # Log verbosity. Options: debug, info, warning, error.
       LOG_LEVEL: info
+
+    # Restart on crash or host reboot. Stop manually with: docker compose down
     restart: unless-stopped
+
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
+      interval: 30s      # Check every 30 seconds
+      timeout: 5s        # Fail if no response within 5 seconds
+      retries: 3         # Mark unhealthy after 3 consecutive failures
+      start_period: 10s  # Grace period on first start
 
 volumes:
   nomnom_data:
+    # Docker-managed named volume. Data lives in /var/lib/docker/volumes/nomnom_data/_data/
+    # Backup: docker run --rm -v nomnom_data:/data -v $(pwd):/backup alpine tar czf /backup/nomnom-backup.tar.gz /data
