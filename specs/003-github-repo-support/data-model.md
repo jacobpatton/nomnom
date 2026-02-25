@@ -1,6 +1,6 @@
 # Data Model: GitHub Repository Support
 
-**Feature**: `001-github-repo-support`
+**Feature**: `003-github-repo-support`
 **Date**: 2026-02-24
 
 ---

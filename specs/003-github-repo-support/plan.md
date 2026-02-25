@@ -1,7 +1,7 @@
 # Implementation Plan: GitHub Repository Support
 
-**Branch**: `001-github-repo-support` | **Date**: 2026-02-24 | **Spec**: [spec.md](./spec.md)
-**Input**: Feature specification from `specs/001-github-repo-support/spec.md`
+**Branch**: `003-github-repo-support` | **Date**: 2026-02-24 | **Spec**: [spec.md](./spec.md)
+**Input**: Feature specification from `specs/003-github-repo-support/spec.md`
 
 ## Summary
 
@@ -30,7 +30,7 @@ Constitution template is unfilled — no project-specific gates defined. Standar
 ### Documentation (this feature)
 
 ```text
-specs/001-github-repo-support/
+specs/003-github-repo-support/
 ├── plan.md              # This file
 ├── research.md          # Phase 0 output
 ├── data-model.md        # Phase 1 output

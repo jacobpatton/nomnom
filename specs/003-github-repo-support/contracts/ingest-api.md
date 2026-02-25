@@ -1,6 +1,6 @@
 # API Contract: Ingest Endpoint (GitHub Extension)
 
-**Feature**: `001-github-repo-support`
+**Feature**: `003-github-repo-support`
 **Date**: 2026-02-24
 
 ---

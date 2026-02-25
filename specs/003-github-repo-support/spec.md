@@ -1,6 +1,6 @@
 # Feature Specification: GitHub Repository Support
 
-**Feature Branch**: `001-github-repo-support`
+**Feature Branch**: `003-github-repo-support`
 **Created**: 2026-02-24
 **Status**: Draft
 **Input**: User description: "add support for Github. The userscript will send the repository URL, and the receiver should grab the github username, repo name, url, and README.md. If I visit a Github page, and it's _not_ the bare repo homepage (like a deep link to another file within the repo), receiver should save it as though I visited the repo homepage. That means it should also ignore anchor-links on the homepage (so it doesn't create needless duplicates in the db)."
