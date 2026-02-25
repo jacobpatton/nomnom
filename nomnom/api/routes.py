@@ -17,7 +17,7 @@ async def _process_submission(
 ) -> None:
     """Background task: write submission to DB, then optionally enrich YouTube content."""
     try:
-        await asyncio.to_thread(ingestion_service.ingest, payload)
+        await ingestion_service.ingest(payload)
     except Exception:
         logger.exception("[ingest] background write failed | url=%s", payload.url)
         return
@@ -54,6 +54,9 @@ async def ingest(
     except SubmissionSkipped as exc:
         logger.info("[ingest] skipped | url=%s | reason=%s", payload.url, exc)
         return IngestResponse(status="skipped", message="Filtered: Reddit non-post URL")
+
+    if payload.domain == "github.com":
+        return await ingestion_service.ingest(payload)
 
     background_tasks.add_task(_process_submission, payload, ingestion_service, repository)
     return IngestResponse(status="queued", message="Queued")
