@@ -88,8 +88,10 @@ async def enrich_youtube_submission(
     url: str, video_id: str, repository: AbstractSubmissionRepository
 ) -> None:
     """Background task: enrich a YouTube submission and update the repository."""
+    import asyncio
+
     service = YouTubeService()
-    result, error = service.enrich(url, video_id)
+    result, error = await asyncio.to_thread(service.enrich, url, video_id)
 
     if error:
         repository.update_submission_content(
